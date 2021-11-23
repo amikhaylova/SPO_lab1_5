@@ -12,14 +12,14 @@ int sockfd;
 
 int send_message_size(uint32_t size) {
     write(sockfd, &size, sizeof(uint32_t));
-    printf("the size of message was send: (%d) bytes\n", size);
+   // printf("the size of message was send: (%d) bytes\n", size);
     //return 0;
 }
 
 int send_message(char *message, uint32_t size) {
     write(sockfd, message, size);
-    printf("The message was send\n");
-    printf("%s\n", message);
+   // printf("The message was send\n");
+    // printf("%s\n", message);
     //return 0;
 }
 
@@ -28,9 +28,9 @@ int send_and_receive(char *message) {
     send_message_size(size);
     send_message(message, size);
 
-    char buff[MAX];
-    read(sockfd, buff, sizeof(buff));
-    printf("From Server : %s", buff);
+  //  char buff[MAX];
+   // read(sockfd, buff, sizeof(buff));
+  //  printf("From Server : %s", buff);
 
     //return 0;
 

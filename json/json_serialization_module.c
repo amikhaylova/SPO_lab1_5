@@ -38,7 +38,6 @@ WJElement get_select_object(struct sql_node * node){
     if (strcmp(values->text, "all") == 0){
         WJEObject(element, "selected-columns[$]", WJE_NEW);
         WJEString(element, "selected-columns[-1]", WJE_SET, "ALL");
-        printf("ALL ");
     }else{
         struct sql_node * cur_value = values -> first;
         while (cur_value != NULL){

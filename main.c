@@ -11,9 +11,9 @@
 #include "server/server_linux.h"
 
 int main(int argc, char **argv) {
-    for (int i = 0; i < argc; i++) {
+   /* for (int i = 0; i < argc; i++) {
         printf("%s\n", argv[i]);
-    }
+    }*/
     if (strcmp("server", argv[1]) == 0) {
         //init_server();
         server_linux();
@@ -34,12 +34,23 @@ int main(int argc, char **argv) {
         send_and_receive(json_string);*/
         initialize_client();
         char line[1024];
-        while (1) {
-            printf("Enter command: ");
-            scanf("%[^\n]", line);
+        bool quit = 0;
+        while (!quit) {
+            size_t command_capacity = 0;
+            char * command = NULL;
+
+            printf("> ");
+            fflush(stdout);
+
+            ssize_t was_read = getline(&command, &command_capacity, stdin);
+            if (was_read <= 0) {
+                free(command);
+                break;
+            }
+
             struct sql_node *node = malloc(sizeof(struct sql_node));
-            int status = parse_string(line, node);
-            printf("status = %d\n", status);
+            int status = parse_string(command, node);
+
             if (status != 1){
                 WJElement json_object = get_json_object(node);
                 char *json_string = WJEToString(json_object, TRUE);
@@ -47,6 +58,7 @@ int main(int argc, char **argv) {
             }else{
                 printf("The syntax of command is invalid\n");
             }
+
         }
 
         return 1;
