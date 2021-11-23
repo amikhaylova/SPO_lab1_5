@@ -195,3 +195,8 @@ WJElement get_json_object(struct sql_node * node) {
     }
     return NULL;
 }
+
+char * sql_node_to_json_string(struct sql_node * node){
+    WJElement json_object = get_json_object(node);
+    return WJEToString(json_object, TRUE);
+}

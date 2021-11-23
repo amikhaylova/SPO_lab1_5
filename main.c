@@ -48,17 +48,15 @@ int main(int argc, char **argv) {
                 break;
             }
 
-            struct sql_node *node = malloc(sizeof(struct sql_node));
+            struct sql_node * node = malloc(sizeof(struct sql_node));
             int status = parse_string(command, node);
 
             if (status != 1){
-                WJElement json_object = get_json_object(node);
-                char *json_string = WJEToString(json_object, TRUE);
+                char * json_string = sql_node_to_json_string(node);
                 send_and_receive(json_string);
             }else{
                 printf("The syntax of command is invalid\n");
             }
-
         }
 
         return 1;
