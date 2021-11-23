@@ -6,6 +6,7 @@
 #include <sys/socket.h>
 #include <netinet/in.h>
 #include <wjelement.h>
+#include "../json/json_deserialization_module.h"
 
 
 #define MAX 512
@@ -33,10 +34,8 @@ void receive_and_send(int sockfd) {
     int n;
     bzero(buff, MAX);
     uint32_t size_buf[1];
-    printf("want to read something \n");
     read(sockfd, size_buf, sizeof(size_buf));
     uint32_t size = *size_buf;
-    printf("I have to read  %d bytes\n", size);
     readXBytes(sockfd, size, buff);
     printf("Text from client: %s\n", buff);
     WJElement wjelement = WJEParse(buff);
@@ -44,14 +43,16 @@ void receive_and_send(int sockfd) {
     printf("COMMAND = %s\n", command);
     // WJElement columns_array = WJEArrayF(wjelement, WJE_GET, NULL, NULL, "selected-columns");
 
-    WJElement person = NULL;
+    /*WJElement person = NULL;
     int x = 0;
     person = WJEArrayF(wjelement, WJE_GET, &person, "selected-columns");
     char * column = NULL;
     while ((column = WJEStringF(person, WJE_GET, NULL, NULL, "[%d]", x))) {
         printf("%s \n", column);
         x++;
-    }
+    }*/
+
+    handle_command(wjelement);
 }
 
 // Driver function
@@ -100,5 +101,5 @@ int server_linux() {
     receive_and_send(connfd);
 
     // After chatting close the socket
-    close(sockfd);
+    //close(sockfd);
 }

@@ -85,7 +85,7 @@ int main(int argc, char **argv) {
 
     /*struct sql_node * node = malloc(sizeof(struct sql_node));
     printf("create table bla (id number, name text, text1 text) ;\n");
-    parse_string("create table bla (id number, name text, text1 text) ;", node);
+    parse_string("create table bla (id number, name text, text1 text);", node);
     print_sql_tree(node, 0);
     get_json_object(node);
 
@@ -149,8 +149,8 @@ int main(int argc, char **argv) {
 
     /*   //CREATE
        struct sql_node * node = malloc(sizeof(struct sql_node));
-       printf("create table bla (id number, name text, text1 text) ;\n");
-       parse_string("create table bla (id number, name text, text1 text) ;", node);
+       printf("C\n");
+       parse_string("create table bla (id number, name text, text1 text);", node);
        print_sql_tree(node, 0);
        WJElement element =  get_json_object(node);
        char * json_string = WJEToString(element, TRUE);
