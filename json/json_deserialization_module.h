@@ -2,7 +2,7 @@
 #define SPO_LAB1_5_JSON_DESERIALIZATION_MODULE_H
 
 #include <wjelement.h>
-#include "../tableStorage/storage.h"
+#include "../table_storage/storage.h"
 
 struct json_create_table_request {
     char *table_name;

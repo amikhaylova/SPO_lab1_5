@@ -605,10 +605,13 @@ void handle_select(WJElement command, struct storage *storage) {
 
     struct storage_table *table = storage_find_table(storage, request.table_name);
 
-    printf("columns in table = %d\n", table->columns.amount);
+    WJElement answer = WJEObject(NULL, NULL, WJE_NEW);
+    WJEString(answer, "query-type", WJE_SET, "SELECT");
+
     if (!table) {
-        //return json_api_make_error("table with the specified name is not exists");
-        printf("table with the specified name is not exists\n");
+        WJEString(answer, "status", WJE_SET, "failed");
+        WJEString(answer, "msg", WJE_SET, "table with the specified name is not exists");
+        //TODO return message
     }
 
     unsigned int columns_amount;
@@ -616,7 +619,6 @@ void handle_select(WJElement command, struct storage *storage) {
 
     struct json_object *error = map_columns_to_indexes(request.columns.amount, request.columns.columns,
                                                        table, &columns_amount, &columns_indexes);
-
 
     if (request.where) {
         struct json_object *error1 = is_where_correct(table, request.where);
@@ -630,23 +632,44 @@ void handle_select(WJElement command, struct storage *storage) {
     }
 
 
+    if(request.columns.amount == 0){
+        for (int i = 0; i < table->columns.amount; i++){
+            WJEObject(answer, "columns[$]", WJE_NEW);
+            WJEString(answer, "columns[-1]", WJE_SET, table->columns.columns[i].name);
+        }
+    }else{
+        for (int i = 0; i < columns_amount; i++){
+            WJEObject(answer, "columns[$]", WJE_NEW);
+            WJEString(answer, "columns[-1]", WJE_SET, request.columns.columns[i]);
+        }
+    }
+
+
+
+    WJEObject(answer, "values[]", WJE_NEW);
     unsigned long long amount = 0;
     for (struct storage_row *row = storage_table_get_first_row(table); row; row = storage_row_next(row)) {
+        //WJEObject(answer, "values[$]", WJE_NEW);
+        WJEArray(answer, "values[$]", WJE_NEW);
         if (request.where == NULL || eval_where(row, request.where)) {
             for (int i = 0; i < columns_amount; i++) {
                 struct storage_value *value = storage_row_get_value(row, columns_indexes[i]);
 
                 switch (value->type) {
                     case STORAGE_COLUMN_TYPE_INT:
+                        WJEInt64(answer, "values[-1][$]", WJE_SET, value->value._int);
                         printf("%ld ", value->value._int);
                         break;
                     case STORAGE_COLUMN_TYPE_UINT:
+                        WJEUInt64(answer, "values[-1][$]", WJE_SET, value->value.uint);
                         printf("%ld ", value->value.uint);
                         break;
                     case STORAGE_COLUMN_TYPE_NUM:
+                        WJEDouble(answer, "values[-1][$]", WJE_SET, value->value.num);
                         printf("%f ", value->value.num);
                         break;
                     case STORAGE_COLUMN_TYPE_STR:
+                        WJEString(answer, "values[-1][$]", WJE_SET, value->value.str);
                         printf("%s ", value->value.str);
                         break;
                 }
@@ -655,6 +678,11 @@ void handle_select(WJElement command, struct storage *storage) {
             printf("\n");
         }
     }
+
+    WJEInt64(answer, "amount", WJE_SET, amount);
+    WJEString(answer, "status", WJE_SET, "success");
+    char * json = WJEToString(answer, TRUE);
+    printf("%s\n", json);
 }
 
 void handle_update(WJElement command, struct storage *storage) {
@@ -714,7 +742,7 @@ void handle_update(WJElement command, struct storage *storage) {
     storage_table_delete(table);
     /*struct json_object * answer = json_object_new_object();
     json_object_object_add(answer, "amount", json_object_new_uint64(amount));
-    return json_api_make_success(answer);*/
+    return j%llun_api_make_success(answer);*/
     printf("%d rows were updates\n", amount);
 
 }
