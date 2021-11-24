@@ -75,15 +75,17 @@ extern int yydebug;
     ALL = 276,                     /* ALL  */
     TEXT_TYPE = 277,               /* TEXT_TYPE  */
     NUMBER_TYPE = 278,             /* NUMBER_TYPE  */
-    COLUMN_NAME = 279,             /* COLUMN_NAME  */
-    SET_VALUE = 280,               /* SET_VALUE  */
-    SET_VALUES = 281,              /* SET_VALUES  */
-    CONDITION = 282,               /* CONDITION  */
-    COLUMN_TYPE = 283,             /* COLUMN_TYPE  */
-    ITEMS = 284,                   /* ITEMS  */
-    COLUMN = 285,                  /* COLUMN  */
-    COLUMNS = 286,                 /* COLUMNS  */
-    IDENTIFIER = 287               /* IDENTIFIER  */
+    INT_TYPE = 279,                /* INT_TYPE  */
+    UINT_TYPE = 280,               /* UINT_TYPE  */
+    COLUMN_NAME = 281,             /* COLUMN_NAME  */
+    SET_VALUE = 282,               /* SET_VALUE  */
+    SET_VALUES = 283,              /* SET_VALUES  */
+    CONDITION = 284,               /* CONDITION  */
+    COLUMN_TYPE = 285,             /* COLUMN_TYPE  */
+    ITEMS = 286,                   /* ITEMS  */
+    COLUMN = 287,                  /* COLUMN  */
+    COLUMNS = 288,                 /* COLUMNS  */
+    IDENTIFIER = 289               /* IDENTIFIER  */
   };
   typedef enum yytokentype yytoken_kind_t;
 #endif
@@ -113,15 +115,17 @@ extern int yydebug;
 #define ALL 276
 #define TEXT_TYPE 277
 #define NUMBER_TYPE 278
-#define COLUMN_NAME 279
-#define SET_VALUE 280
-#define SET_VALUES 281
-#define CONDITION 282
-#define COLUMN_TYPE 283
-#define ITEMS 284
-#define COLUMN 285
-#define COLUMNS 286
-#define IDENTIFIER 287
+#define INT_TYPE 279
+#define UINT_TYPE 280
+#define COLUMN_NAME 281
+#define SET_VALUE 282
+#define SET_VALUES 283
+#define CONDITION 284
+#define COLUMN_TYPE 285
+#define ITEMS 286
+#define COLUMN 287
+#define COLUMNS 288
+#define IDENTIFIER 289
 
 /* Value type.  */
 #if ! defined YYSTYPE && ! defined YYSTYPE_IS_DECLARED
@@ -133,7 +137,7 @@ union YYSTYPE
     int number;
     char * text;
 
-#line 137 "y.tab.h"
+#line 141 "y.tab.h"
 
 };
 typedef union YYSTYPE YYSTYPE;

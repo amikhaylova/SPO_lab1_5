@@ -1,6 +1,7 @@
 #include <string.h>
 #include <wjelement.h>
 #include "json_serialization_module.h"
+#include <ctype.h>
 
 WJElement get_create_object(struct sql_node * node){
     char * query_type = "CREATE";
@@ -36,8 +37,8 @@ WJElement get_select_object(struct sql_node * node){
     WJEArray(element, "selected-columns", WJE_SET);
 
     if (strcmp(values->text, "all") == 0){
-        WJEObject(element, "selected-columns[$]", WJE_NEW);
-        WJEString(element, "selected-columns[-1]", WJE_SET, "ALL");
+       /* WJEObject(element, "selected-columns[$]", WJE_NEW);
+        WJEString(element, "selected-columns[-1]", WJE_SET, "ALL");*/
     }else{
         struct sql_node * cur_value = values -> first;
         while (cur_value != NULL){

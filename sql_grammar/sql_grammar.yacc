@@ -52,7 +52,7 @@ struct sql_node * root;
 
 %token QUERY SELECT INSERT UPDATE CREATE DELETE DROP
 FROM IDENTIFIERS WHERE AND VALUES INTO SET TABLE TABLE_NAME STATEMENT TABLE_DEF ALL
-TEXT_TYPE NUMBER_TYPE COLUMN_NAME SET_VALUE SET_VALUES CONDITION COLUMN_TYPE ITEMS COLUMN COLUMNS;
+TEXT_TYPE NUMBER_TYPE INT_TYPE UINT_TYPE COLUMN_NAME SET_VALUE SET_VALUES CONDITION COLUMN_TYPE ITEMS COLUMN COLUMNS;
 
 %token<text> IDENTIFIER;
 
@@ -143,10 +143,16 @@ identifier: IDENTIFIER
                 {$$ = new_sql_node(IDENTIFIER, $1, NULL, NULL);};
 
 column_type_val: NUMBER_TYPE
-                    {$$ = new_sql_node(NUMBER_TYPE, "number", NULL, NULL);}
+                    {$$ = new_sql_node(NUMBER_TYPE, "NUM", NULL, NULL);}
                  |
                  TEXT_TYPE
-                    {$$ = new_sql_node(TEXT_TYPE, "text", NULL, NULL);};
+                    {$$ = new_sql_node(TEXT_TYPE, "TEXT", NULL, NULL);};
+                 |
+                 INT_TYPE
+                    {$$ = new_sql_node(INT_TYPE, "INT", NULL, NULL);};
+                 |
+                 UINT_TYPE
+                    {$$ = new_sql_node(UINT_TYPE, "UINT", NULL, NULL);};
 
 column_type: column_type_val
                 { $$ = new_sql_node(COLUMN_TYPE, "column_type", $1, NULL);};
