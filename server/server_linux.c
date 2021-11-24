@@ -7,11 +7,10 @@
 #include <netinet/in.h>
 #include <wjelement.h>
 #include <errno.h>
-//#include <w32api/vss.h>
 #include <sys/fcntl.h>
 #include <stdbool.h>
 #include "../json/json_deserialization_module.h"
-#include "../tableStorage/storage.h"
+#include "../table_storage/storage.h"
 
 
 #define MAX 512
@@ -689,16 +688,16 @@ void handle_update(WJElement command, struct storage *storage) {
         }
     }
 
-   /* {
-        struct json_object *error = check_values(request.values.amount, request.values.values, table, columns_amount,
-                                                 columns_indexes);
+    /* {
+         struct json_object *error = check_values(request.values.amount, request.values.values, table, columns_amount,
+                                                  columns_indexes);
 
-        if (error) {
-            free(columns_indexes);
-            storage_table_delete(table);
-            //return error;
-        }
-    }*/
+         if (error) {
+             free(columns_indexes);
+             storage_table_delete(table);
+             //return error;
+         }
+     }*/
 
     unsigned long long amount = 0;
     for (struct storage_row *row = storage_table_get_first_row(table); row; row = storage_row_next(row)) {

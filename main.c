@@ -2,7 +2,6 @@
 #include <wjreader.h>
 #include <wjwriter.h>
 #include <wjelement.h>
-
 #include "sql_grammar/y.tab.h"
 #include "sql_lexical_analyzer/lex.yy.h"
 #include "json/json_serialization_module.h"
