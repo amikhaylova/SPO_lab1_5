@@ -17,8 +17,18 @@ int check_if_string_is_int(char *str) {
     char *str1 = malloc(strlen(str));
     strcpy(str1, str);
     for (int i = 0; str1[i] != '\0'; i++) {
-        if (isdigit(str1[i]) == 0)
-            return 0;
+        if(i==0){
+            if((str1[i]) == '-'){
+                continue;
+            }else{
+                if (isdigit(str1[i]) == 0)
+                    return 0;
+            }
+        }else{
+            if (isdigit(str1[i]) == 0)
+                return 0;
+        }
+
     }
     return 1;
 }
