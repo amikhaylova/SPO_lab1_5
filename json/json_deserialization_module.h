@@ -93,8 +93,8 @@ const static struct {
 };
 
 enum storage_column_type convert_string_to_col_type(const char *str);
+
 enum json_operator convert_string_to_operator(const char *str);
-//enum json_api_action json_api_get_action(struct json_object * object);
 
 struct json_create_table_request json_to_create_table_request(WJElement command);
 

@@ -1,6 +1,5 @@
 #include <wjelement.h>
 #include <string.h>
-#include <stdbool.h>
 #include "../table_storage/storage.h"
 #include "json_deserialization_module.h"
 #include <ctype.h>
@@ -11,8 +10,7 @@ int check_if_string_is_float(char *str) {
     char *str1 = malloc(strlen(str));
     strcpy(str1, str);
     int ret = sscanf(str1, "%f %n", &ignore, &len);
-    //printf("%d", ret == 1 && !str1[len]);
-    //printf("str after float is %s\n", str);
+
 }
 
 int check_if_string_is_int(char *str) {
@@ -62,12 +60,9 @@ static struct json_where *json_to_where(WJElement command) {
     WJElement condition = NULL;
     int x = 0;
     while (condition = WJEObjectF(command, WJE_GET, NULL, "condition[%d]", x)) {
-        //column name
         char *type = WJEStringF(condition, WJE_GET, NULL, NULL, "condition-type");
         where->op = convert_string_to_operator(type);
-        //left param
         where->column = WJEStringF(condition, WJE_GET, NULL, NULL, "left-param");
-        //right param
         char * string_value = WJEStringF(condition, WJE_GET, NULL, NULL, "right-param");
         where->value = json_to_storage_value(string_value);
         x++;

@@ -745,7 +745,7 @@ void receive_and_send(int sockfd, struct storage *storage) {
     send_message(response, sockfd);
 }
 
-int server_linux() {
+int server_linux(char *filename) {
     int fd = open("db", O_RDWR);
     struct storage *storage;
 
@@ -755,8 +755,7 @@ int server_linux() {
     }
 
     if (fd < 0 && errno == ENOENT) {
-        //TODO file from args
-        fd = open("db", O_CREAT | O_RDWR, 0644);
+        fd = open(filename, O_CREAT | O_RDWR, 0644);
         storage = storage_init(fd);
     } else {
         storage = storage_open(fd);

@@ -1,5 +1,4 @@
 #include "storage.h"
-
 #include <unistd.h>
 #include <stdio.h>
 #include <stdlib.h>
@@ -9,11 +8,6 @@
 
 #define SIGNATURE ("\xDE\xAD\xBA\xBE")
 
-/***
- *
- * @param fd file descriptor
- * @return pointer to struct storage that was inited
- */
 struct storage *storage_init(int fd) {
     lseek(fd, 0, SEEK_SET);
 
@@ -29,11 +23,6 @@ struct storage *storage_init(int fd) {
     return storage;
 }
 
-/***
- *
- * @param fd  file descriptor
- * @return pointer to struct storage that was opened
- */
 struct storage *storage_open(int fd) {
     lseek(fd, 0, SEEK_SET);
 

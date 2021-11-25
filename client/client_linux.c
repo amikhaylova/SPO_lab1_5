@@ -17,13 +17,12 @@ int sockfd;
 
 int send_message_size(uint32_t size) {
     write(sockfd, &size, sizeof(uint32_t));
-    //return 0;
+    return 0;
 }
 
 int send_message_client(char *message, uint32_t size) {
     write(sockfd, message, size);
-    // printf("%s\n", message);
-    //return 0;
+    return 0;
 }
 
 void read_n_bytes(int socket, unsigned int x, void *buffer) {
@@ -85,14 +84,12 @@ void handle_response(WJElement response) {
     if (strcmp(response_status, "success") == 0) {
         char *type = WJEStringF(response, WJE_GET, NULL, NULL, "query-type");
         if (strcmp(type, "SELECT") == 0) {
-            // int64_t col_amount = WJEInt64F(response, WJE_GET, NULL, NULL, "amount");
 
             WJElement col_array = NULL;
             col_array = WJEArrayF(response, WJE_GET, &col_array, "columns");
             char *column_name = NULL;
             int64_t col_amount = 0;
             while ((column_name = WJEStringF(col_array, WJE_GET, NULL, NULL, "[%ld]", col_amount))) {
-                //columns[col_amount] = column_name;
                 col_amount++;
             }
 
@@ -112,19 +109,7 @@ void handle_response(WJElement response) {
 
             int64_t amount = WJEInt64F(response, WJE_GET, NULL, NULL, "amount");
             WJElement rows = WJEArray(response, "values", WJE_GET);
-            //  printf("rows = %s\n",WJEToString(rows, TRUE));
             WJElement row = NULL;
-            /*  for (int k = 1; k < amount + 1; k++){
-                  row = WJEArrayF(rows, WJE_GET, &col_array, "[%d]", k);
-                  printf("row = %s\n",WJEToString(row, TRUE));
-                  char * value;
-                  int m = 0;
-                  while ((value = WJEStringF(row, WJE_GET, NULL, NULL, "[%d]", m))) {
-                      printf("%s ", value);
-                      m++;
-                  }
-                  printf("\n");
-              }*/
             int k = 0;
             while (row = WJEArrayF(rows, WJE_GET, NULL, "[%d]", k)) {
                 // printf("row = %s\n",WJEToString(row, TRUE));

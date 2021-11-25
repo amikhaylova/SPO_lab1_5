@@ -37,8 +37,6 @@ WJElement get_select_request_object(struct sql_node *node) {
     WJEArray(element, "selected-columns", WJE_SET);
 
     if (strcmp(values->text, "all") == 0) {
-        /* WJEObject(element, "selected-columns[$]", WJE_NEW);
-         WJEString(element, "selected-columns[-1]", WJE_SET, "ALL");*/
     } else {
         struct sql_node *cur_value = values->first;
         while (cur_value != NULL) {
@@ -121,8 +119,6 @@ WJElement get_insert_request_object(struct sql_node *node) {
         WJEArray(element, "selected-columns", WJE_SET);
         struct sql_node *cur_column = columns->first;
         while (cur_column != NULL) {
-            //selected columns
-            //printf ("%s ", cur_column->text);
             WJEObject(element, "selected-columns[$]", WJE_NEW);
             WJEString(element, "selected-columns[-1]", WJE_SET, cur_column->text);
             cur_column = cur_column->next;
@@ -133,15 +129,12 @@ WJElement get_insert_request_object(struct sql_node *node) {
         WJEArray(element, "values", WJE_SET);
         struct sql_node *cur_value = values->first;
         while (cur_value != NULL) {
-            //values
-            // printf ("%s ", cur_value->text);
             WJEObject(element, "values[$]", WJE_NEW);
             WJEString(element, "values[-1]", WJE_SET, cur_value->text);
             cur_value = cur_value->next;
         }
     }
     return element;
-    //printf ("%s %s\n", query_type, table_name);
 }
 
 WJElement get_drop_request_object(struct sql_node *node) {
