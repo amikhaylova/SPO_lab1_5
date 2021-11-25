@@ -149,7 +149,7 @@ void handle_response(WJElement response) {
         }
     } else if (strcmp(response_status, "failed") == 0) {
         char *msg = WJEStringF(response, WJE_GET, NULL, NULL, "msg");
-        printf(RED"operation failed (%s)\n"RESET, msg);
+        printf(RED"operation failed: %s\n"RESET, msg);
     } else {
         printf(RED"%s\n"RESET, "unexpected answer from server\n");
     }
