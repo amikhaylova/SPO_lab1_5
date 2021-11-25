@@ -135,8 +135,6 @@ void handle_response(WJElement response) {
                 printf("\n");
             }
             printf(MAGENTA "%ld rows were selected\n" RESET, amount);
-
-
         } else if (strcmp(type, "DELETE") == 0) {
             int64_t amount = WJEInt64F(response, WJE_GET, NULL, NULL, "amount");
             printf(MAGENTA"%ld rows were deleted\n"RESET, amount);

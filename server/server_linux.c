@@ -746,7 +746,7 @@ void receive_and_send(int sockfd, struct storage *storage) {
 }
 
 int server_linux(char *filename) {
-    int fd = open("db", O_RDWR);
+    int fd = open(filename, O_RDWR);
     struct storage *storage;
 
     if (fd < 0 && errno != ENOENT) {
