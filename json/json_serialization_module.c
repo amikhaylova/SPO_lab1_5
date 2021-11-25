@@ -62,7 +62,6 @@ WJElement get_select_request_object(struct sql_node *node) {
         WJEString(element, "condition[-1].right-param", WJE_NEW, right_param);
         WJEString(element, "condition[-1].left-param", WJE_NEW, left_param);
     }
-    printf("\n");
     return element;
 }
 
@@ -197,17 +196,19 @@ WJElement get_json_request_object(struct sql_node *node) {
     return NULL;
 }
 
-char *get_success_response(int amount) {
+char *get_success_response(int amount, char * query_type) {
     WJElement element = WJEObject(NULL, NULL, WJE_NEW);
     WJEString(element, "status", WJE_SET, "success");
     WJEInt64(element, "amount", WJE_SET, amount);
+    WJEString(element, "query-type", WJE_SET, query_type);
     return WJEToString(element, FALSE);
 }
 
-char *get_success_response_msg(char * msg) {
+char *get_success_response_msg(char * msg, char * query_type) {
     WJElement element = WJEObject(NULL, NULL, WJE_NEW);
     WJEString(element, "status", WJE_SET, "success");
     WJEString(element, "msg", WJE_SET, msg);
+    WJEString(element, "query-type", WJE_SET, query_type);
     return WJEToString(element, FALSE);
 }
 
@@ -220,6 +221,7 @@ char *get_failure_response(char *msg) {
 
 char *get_select_success_response(int amount, WJElement element){
     WJEString(element, "status", WJE_SET, "success");
+    WJEString(element, "query-type", WJE_SET, "SELECT");
     WJEInt64(element, "amount", WJE_SET, amount);
     return WJEToString(element, FALSE);
 }

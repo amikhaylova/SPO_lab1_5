@@ -52,7 +52,11 @@ int main(int argc, char **argv) {
 
             if (status != 1){
                 char * json_string = sql_node_to_json_string(node);
-                send_and_receive(json_string);
+                WJElement response = NULL;
+                send_and_receive(json_string, &response);
+                char *response_status = WJEStringF(response, WJE_GET, NULL, NULL, "status");
+                handle_response(response);
+               // printf("status is %s\n", response_status);
             }else{
                 printf("The syntax of command is invalid\n");
             }

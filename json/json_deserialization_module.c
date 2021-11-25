@@ -26,8 +26,6 @@ int check_if_string_is_int(char *str) {
 }
 
 static struct storage_value *json_to_storage_value(char * str) {
-    printf("initial str is %s\n", str);
-
     struct storage_value *value;
 
     if (check_if_string_is_int(str) == 1) {
@@ -40,11 +38,8 @@ static struct storage_value *json_to_storage_value(char * str) {
             value->type = STORAGE_COLUMN_TYPE_UINT;
             value->value.uint = x;
         }
-        printf("value = %d\n", x);
         return value;
     }
-
-    //printf("str after int is %s\n", str);
 
     if (check_if_string_is_float(str) == 1) {
         value = malloc(sizeof(*value));
@@ -52,14 +47,12 @@ static struct storage_value *json_to_storage_value(char * str) {
         double d;
         sscanf(str, "%lf", &d);
         value->value.num = d;
-        printf("value = %f\n", d);
         return value;
     }
 
     value = malloc(sizeof(*value));
     value->type = STORAGE_COLUMN_TYPE_STR;
     value->value.str = str;
-    printf("value = %s\n", str);
     return value;
 }
 
@@ -149,8 +142,6 @@ struct json_select_request json_to_select_request(WJElement command) {
     request.columns.columns = malloc(sizeof(*request.columns.columns) * request.columns.amount);
     amount = 0;
     while ((column_name = WJEStringF(selected_columns, WJE_GET, NULL, NULL, "[%d]", amount))) {
-        fflush(stdout);
-        printf("col name is %s\n", column_name);
         request.columns.columns[amount] = column_name;
         amount++;
     }

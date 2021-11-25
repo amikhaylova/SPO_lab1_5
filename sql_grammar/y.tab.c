@@ -1329,7 +1329,7 @@ yyreduce:
   case 2: /* query: query_type ';'  */
 #line 60 "sql_grammar.yacc"
     {(yyval.node) = new_sql_node(QUERY, "query", (yyvsp[-1].node), NULL);
-    printf(CORRECT_SYNTAX_MESSAGE);
+   // printf(CORRECT_SYNTAX_MESSAGE);
     root = (yyval.node);}
 #line 1335 "y.tab.c"
     break;
@@ -1794,7 +1794,7 @@ int parse_string(const char* in, struct sql_node * node) {
   set_input_string(in);
   int rv = yyparse();
   *node = *root;
-  printf("\n");
+  //printf("\n");
   end_lexical_scan();
   return rv;
 }

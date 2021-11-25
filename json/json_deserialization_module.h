@@ -108,12 +108,5 @@ struct json_select_request json_to_select_request(WJElement command);
 
 struct json_update_request json_to_update_request(WJElement command);
 
-struct json_object *json_api_make_success(struct json_object *answer);
-
-struct json_object *json_api_make_error(const char *msg);
-
-struct json_object *json_api_from_value(struct storage_value *value);
-
-void handle_command(WJElement command);
 
 #endif //SPO_LAB1_5_JSON_DESERIALIZATION_MODULE_H

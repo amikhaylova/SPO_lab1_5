@@ -4,36 +4,52 @@
 #include <string.h>
 #include <sys/socket.h>
 #include <unistd.h>
+#include <wjelement.h>
 
 #define MAX 80
 #define PORT 9090
 #define SA struct sockaddr
+#define BOLDGREEN   "\033[1m\033[32m"
+#define RESET "\033[0m"
+#define MAGENTA "\033[35m"
+#define RED     "\033[31m"
 int sockfd;
 
 int send_message_size(uint32_t size) {
     write(sockfd, &size, sizeof(uint32_t));
-   // printf("the size of message was send: (%d) bytes\n", size);
     //return 0;
 }
 
-int send_message(char *message, uint32_t size) {
+int send_message_client(char *message, uint32_t size) {
     write(sockfd, message, size);
-   // printf("The message was send\n");
     // printf("%s\n", message);
     //return 0;
 }
 
-int send_and_receive(char *message) {
-    uint32_t size = (int) strlen(message);
+void read_n_bytes(int socket, unsigned int x, void *buffer) {
+    int bytesRead = 0;
+    int result;
+    while (bytesRead < x) {
+        result = read(socket, buffer + bytesRead, x - bytesRead);
+        if (result < 1) {
+        }
+        bytesRead += result;
+    }
+}
+
+
+void send_and_receive(char *message_to_send, WJElement *response) {
+    uint32_t size = (int) strlen(message_to_send);
     send_message_size(size);
-    send_message(message, size);
+    send_message_client(message_to_send, size);
 
-  //  char buff[MAX];
-   // read(sockfd, buff, sizeof(buff));
-  //  printf("From Server : %s", buff);
-
-    //return 0;
-
+    uint32_t size_buf[1];
+    read(sockfd, size_buf, sizeof(size_buf));
+    uint32_t response_size = *size_buf;
+    char buff[response_size];
+    bzero(buff, response_size);
+    read_n_bytes(sockfd, response_size, buff);
+    *response = WJEParse(buff);
 }
 
 int initialize_client() {
@@ -62,4 +78,83 @@ int initialize_client() {
 
     // close the socket
     //close(sockfd);
+}
+
+void handle_response(WJElement response) {
+    char *response_status = WJEStringF(response, WJE_GET, NULL, NULL, "status");
+    if (strcmp(response_status, "success") == 0) {
+        char *type = WJEStringF(response, WJE_GET, NULL, NULL, "query-type");
+        if (strcmp(type, "SELECT") == 0) {
+            // int64_t col_amount = WJEInt64F(response, WJE_GET, NULL, NULL, "amount");
+
+            WJElement col_array = NULL;
+            col_array = WJEArrayF(response, WJE_GET, &col_array, "columns");
+            char *column_name = NULL;
+            int64_t col_amount = 0;
+            while ((column_name = WJEStringF(col_array, WJE_GET, NULL, NULL, "[%ld]", col_amount))) {
+                //columns[col_amount] = column_name;
+                col_amount++;
+            }
+
+            char *columns[col_amount];
+            int i = 0;
+            while ((column_name = WJEStringF(col_array, WJE_GET, NULL, NULL, "[%d]", i))) {
+                columns[i] = column_name;
+                i++;
+            }
+
+            for (int j = 0; j < col_amount; j++) {
+                printf(BOLDGREEN "%-20s" RESET, columns[j]);
+            }
+
+            printf(BOLDGREEN "\n" RESET);
+
+
+            int64_t amount = WJEInt64F(response, WJE_GET, NULL, NULL, "amount");
+            WJElement rows = WJEArray(response, "values", WJE_GET);
+            //  printf("rows = %s\n",WJEToString(rows, TRUE));
+            WJElement row = NULL;
+            /*  for (int k = 1; k < amount + 1; k++){
+                  row = WJEArrayF(rows, WJE_GET, &col_array, "[%d]", k);
+                  printf("row = %s\n",WJEToString(row, TRUE));
+                  char * value;
+                  int m = 0;
+                  while ((value = WJEStringF(row, WJE_GET, NULL, NULL, "[%d]", m))) {
+                      printf("%s ", value);
+                      m++;
+                  }
+                  printf("\n");
+              }*/
+            int k = 0;
+            while (row = WJEArrayF(rows, WJE_GET, NULL, "[%d]", k)) {
+                // printf("row = %s\n",WJEToString(row, TRUE));
+                char *value;
+                int m = 0;
+                // values[-1][$]
+                while (value = WJEStringF(response, WJE_GET, NULL, NULL, "values[%d][%d]", k, m)) {
+                    printf("%-20s", value);
+                    m++;
+                }
+                printf("\n");
+                k++;
+            }
+            printf(MAGENTA "%ld rows were selected\n" RESET, amount);
+
+        } else if (strcmp(type, "DELETE") == 0) {
+            int64_t amount = WJEInt64F(response, WJE_GET, NULL, NULL, "amount");
+            printf(MAGENTA"%ld rows were deleted\n"RESET, amount);
+        } else if (strcmp(type, "UPDATE") == 0) {
+            int64_t amount = WJEInt64F(response, WJE_GET, NULL, NULL, "amount");
+            printf(MAGENTA"%ld rows were updated\n"RESET, amount);
+        } else if (strcmp(type, "DROP") == 0 || strcmp(type, "CREATE") == 0 || strcmp(type, "INSERT") == 0) {
+            char *msg = WJEStringF(response, WJE_GET, NULL, NULL, "msg");
+            printf(MAGENTA"%s\n"RESET, msg);
+        }
+    } else if (strcmp(response_status, "failed") == 0) {
+        char *msg = WJEStringF(response, WJE_GET, NULL, NULL, "msg");
+        printf(RED"operation failed (%s)\n"RESET, msg);
+    } else {
+        printf(RED"%s\n"RESET, "unexpected answer from server\n");
+    }
+
 }

@@ -11,12 +11,11 @@
 #include "../json/json_deserialization_module.h"
 #include "../json/json_serialization_module.h"
 
-
-
 #define MAX 512
 #define PORT 9090
 #define SA struct sockaddr
-int clientSocket;
+char *TABLE_DOES_NOT_EXIST = "table with the specified name does not exist";
+char *TABLE_DOES_EXIST = "table with the specified name already exists";
 
 static char *
 map_columns_to_indexes(unsigned int request_columns_amount, char **request_columns_names,
@@ -144,7 +143,7 @@ char *handle_create_table(WJElement command, struct storage *storage) {
     if (error) {
         return get_failure_response(TABLE_DOES_EXIST);
     } else {
-        return get_success_response_msg("the table was successfully created");
+        return get_success_response_msg("the table was successfully created", "CREATE");
     }
 }
 
@@ -158,7 +157,7 @@ char *handle_drop_table(WJElement command, struct storage *storage) {
     }
     storage_table_remove(table);
     storage_table_delete(table);
-    return get_success_response_msg("the table was successfully dropped");
+    return get_success_response_msg("the table was successfully dropped", "DROP");
 }
 
 
@@ -179,21 +178,19 @@ char *handle_insert_row(WJElement command, struct storage *storage) {
 
     if (error) {
         storage_table_delete(table);
-        return get_failure_response(error);
+        return error;
 
     }
 
-    /* {
-         printf("here ");
-         struct json_object * error = check_values(request.values.amount, request.values.values, table, columns_amount, columns_indexes);
 
-         if (error) {
-             free(columns_indexes);
-             storage_table_delete(table);
-             printf("check_values failed");
-             //return error;
-         }
-     }*/
+    char *error1 = check_values(request.values.amount, request.values.values, table, columns_amount, columns_indexes);
+
+    if (error1) {
+        free(columns_indexes);
+        storage_table_delete(table);
+        return error1;
+    }
+
 
     struct storage_row *row = storage_table_add_row(table);
     for (unsigned int i = 0; i < columns_amount; ++i) {
@@ -203,7 +200,7 @@ char *handle_insert_row(WJElement command, struct storage *storage) {
     free(columns_indexes);
     storage_row_delete(row);
     storage_table_delete(table);
-    return get_success_response_msg("the row was successfully inserted");
+    return get_success_response_msg("the row was successfully inserted", "INSERT");
 }
 
 static char *is_where_correct(struct storage_table *table, struct json_where *where) {
@@ -543,7 +540,7 @@ char *handle_delete_row(WJElement command, struct storage *storage) {
     }
 
     storage_table_delete(table);
-    return get_success_response(amount);
+    return get_success_response(amount, "DELETE");
 }
 
 char *handle_select(WJElement command, struct storage *storage) {
@@ -561,7 +558,7 @@ char *handle_select(WJElement command, struct storage *storage) {
     unsigned int *columns_indexes;
 
     char *error = map_columns_to_indexes(request.columns.amount, request.columns.columns,
-                                                       table, &columns_amount, &columns_indexes);
+                                         table, &columns_amount, &columns_indexes);
 
 
     if (request.where) {
@@ -602,15 +599,32 @@ char *handle_select(WJElement command, struct storage *storage) {
                     continue;
                 }
 
+                int _int;
+                double _double;
                 switch (value->type) {
                     case STORAGE_COLUMN_TYPE_INT:
-                        WJEInt64(answer, "values[-1][$]", WJE_SET, value->value._int);
+                        _int = value->value._int;
+                        int length = snprintf(NULL, 0, "%d", _int);
+                        char* str = malloc( length + 1 );
+                        snprintf(str, length + 1, "%d", _int );
+                        WJEString(answer, "values[-1][$]", WJE_SET, str);
+                        free(str);
                         break;
                     case STORAGE_COLUMN_TYPE_UINT:
-                        WJEUInt64(answer, "values[-1][$]", WJE_SET, value->value.uint);
+                        _int = value->value.uint;
+                        length = snprintf(NULL, 0, "%d", _int);
+                        str = malloc( length + 1 );
+                        snprintf(str, length + 1, "%d", _int );
+                        WJEString(answer, "values[-1][$]", WJE_SET, str);
+                        free(str);
                         break;
                     case STORAGE_COLUMN_TYPE_NUM:
-                        WJEDouble(answer, "values[-1][$]", WJE_SET, value->value.num);
+                        _double = value->value.num;
+                        length = snprintf(NULL, 0, "%g", _double);
+                        str = malloc( length + 1 );
+                        snprintf(str, length + 1, "%g", _double);
+                        WJEString(answer, "values[-1][$]", WJE_SET, str);
+                        free(str);
                         break;
                     case STORAGE_COLUMN_TYPE_STR:
                         WJEString(answer, "values[-1][$]", WJE_SET, value->value.str);
@@ -621,7 +635,7 @@ char *handle_select(WJElement command, struct storage *storage) {
         }
     }
 
-    return get_success_response(amount);
+    return get_select_success_response(amount, answer);
 }
 
 char *handle_update(WJElement command, struct storage *storage) {
@@ -643,26 +657,26 @@ char *handle_update(WJElement command, struct storage *storage) {
     unsigned int columns_amount;
     unsigned int *columns_indexes;
 
-    {
+
         char *error = map_columns_to_indexes(request.columns.amount, request.columns.columns,
-                                                           table, &columns_amount, &columns_indexes);
+                                             table, &columns_amount, &columns_indexes);
 
         if (error) {
             storage_table_delete(table);
             return error;
         }
-    }
 
-    /* {
-         struct json_object *error = check_values(request.values.amount, request.values.values, table, columns_amount,
+
+
+         char *error1 = check_values(request.values.amount, request.values.values, table, columns_amount,
                                                   columns_indexes);
 
-         if (error) {
+         if (error1) {
              free(columns_indexes);
              storage_table_delete(table);
-             //return error;
+             return error1;
          }
-     }*/
+
 
     int amount = 0;
     for (struct storage_row *row = storage_table_get_first_row(table); row; row = storage_row_next(row)) {
@@ -676,7 +690,7 @@ char *handle_update(WJElement command, struct storage *storage) {
 
     free(columns_indexes);
     storage_table_delete(table);
-    return get_success_response(amount);
+    return get_success_response(amount, "UPDATE");
 
 }
 
@@ -706,10 +720,16 @@ void readXBytes(int socket, unsigned int x, void *buffer) {
     while (bytesRead < x) {
         result = read(socket, buffer + bytesRead, x - bytesRead);
         if (result < 1) {
-            printf("error occurred while reading from socket\n");
         }
         bytesRead += result;
     }
+}
+
+int send_message(char *message, int sockfd){
+    uint32_t size = (int) strlen(message);
+    write(sockfd, &size, sizeof(uint32_t));
+    write(sockfd, message, size);
+    return 1;
 }
 
 // Function designed for chat between client and server.
@@ -721,8 +741,8 @@ void receive_and_send(int sockfd, struct storage *storage) {
     uint32_t size = *size_buf;
     readXBytes(sockfd, size, buff);
     WJElement wjelement = WJEParse(buff);
-    char *command = WJEStringF(wjelement, WJE_GET, NULL, NULL, "query-type");
-    handle_request(wjelement, storage);
+    char * response = handle_request(wjelement, storage);
+    send_message(response, sockfd);
 }
 
 int server_linux() {
@@ -735,6 +755,7 @@ int server_linux() {
     }
 
     if (fd < 0 && errno == ENOENT) {
+        //TODO file from args
         fd = open("db", O_CREAT | O_RDWR, 0644);
         storage = storage_init(fd);
     } else {
