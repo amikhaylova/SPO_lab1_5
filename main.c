@@ -28,7 +28,7 @@ int main(int argc, char **argv) {
         printf("%s\n", line);
         struct sql_node * node = malloc(sizeof(struct sql_node));
         parse_string(line, node);
-        WJElement json_object = get_json_object(node);
+        WJElement json_object = get_json_request_object(node);
         char * json_string = WJEToString(json_object, TRUE);
         send_and_receive(json_string);*/
         initialize_client();
@@ -134,14 +134,14 @@ int main(int argc, char **argv) {
     printf("INSERT INTO bla VALUES (1, 2);\n");
     parse_string("INSERT INTO bla VALUES (1, 2);", node6);
     print_sql_tree(node6, 0);
-    get_json_object(node6);*/
+    get_json_request_object(node6);*/
 
     /* //DROP TABLE bla
      struct sql_node *node4 = malloc(sizeof(struct sql_node));
      printf("DROP TABLE bla;\n");
      parse_string("DROP TABLE bla;", node4);
      print_sql_tree(node4, 0);
-     WJElement element =  get_json_object(node4);
+     WJElement element =  get_json_request_object(node4);
      char * json_string = WJEToString(element, TRUE);
      printf("%s", json_string);
      */
@@ -151,7 +151,7 @@ int main(int argc, char **argv) {
        printf("C\n");
        parse_string("create table bla (id number, name text, text1 text);", node);
        print_sql_tree(node, 0);
-       WJElement element =  get_json_object(node);
+       WJElement element =  get_json_request_object(node);
        char * json_string = WJEToString(element, TRUE);
        printf("%s", json_string);*/
 /*
@@ -160,7 +160,7 @@ int main(int argc, char **argv) {
     printf("select col1, col2 from bla;\n");
     parse_string("select col1, col2 from bla;", node10);
     print_sql_tree(node10, 0);
-    WJElement element =  get_json_object(node10);
+    WJElement element =  get_json_request_object(node10);
     char * json_string = WJEToString(element, TRUE);
     printf("%s", json_string);*/
 
@@ -169,7 +169,7 @@ int main(int argc, char **argv) {
      printf("select a from bla where a=1;\n");
      parse_string("select a from bla where a=1;", node1);
      print_sql_tree(node1, 0);
-     get_json_object(node1);
+     get_json_request_object(node1);
      WJElement element =  get_json_object(node1);
      char * json_string = WJEToString(element, TRUE);
      printf("%s", json_string);*/
@@ -180,7 +180,7 @@ int main(int argc, char **argv) {
       parse_string("UPDATE abc SET b=1,a=1 WHERE id=1;", node2);
       print_sql_tree(node2, 0);
       get_json_object(node2);
-      WJElement element =  get_json_object(node2);
+      WJElement element =  get_json_request_object(node2);
       char * json_string = WJEToString(element, TRUE);
       printf("%s", json_string);*/
 
@@ -189,7 +189,7 @@ int main(int argc, char **argv) {
      printf("INSERT INTO bla (col1, col2) VALUES (1, 2);\n");
      parse_string("INSERT INTO bla (col1, col2)  VALUES (1, 2);", node6);
      print_sql_tree(node6, 0);
-     WJElement element =  get_json_object(node6);
+     WJElement element =  get_json_request_object(node6);
      char * json_string = WJEToString(element, TRUE);
      printf("%s", json_string);*/
 
@@ -198,7 +198,7 @@ int main(int argc, char **argv) {
     printf("DELETE FROM bla WHERE id<1;\n");
     parse_string("DELETE FROM bla WHERE id<1;", node5);
     print_sql_tree(node5, 0);
-    WJElement element =  get_json_object(node5);
+    WJElement element =  get_json_request_object(node5);
     char * json_string = WJEToString(element, TRUE);
     printf("%s", json_string);*/
 

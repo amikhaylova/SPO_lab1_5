@@ -1,4 +1,3 @@
-
 #include <stdio.h>
 #include <unistd.h>
 #include <stdlib.h>
@@ -10,7 +9,8 @@
 #include <sys/fcntl.h>
 #include <stdbool.h>
 #include "../json/json_deserialization_module.h"
-#include "../table_storage/storage.h"
+#include "../json/json_serialization_module.h"
+
 
 
 #define MAX 512
@@ -18,9 +18,10 @@
 #define SA struct sockaddr
 int clientSocket;
 
-static struct json_object *map_columns_to_indexes(unsigned int request_columns_amount, char **request_columns_names,
-                                                  struct storage_table *table, unsigned int *columns_amount,
-                                                  unsigned int **columns_indexes) {
+static char *
+map_columns_to_indexes(unsigned int request_columns_amount, char **request_columns_names,
+                       struct storage_table *table, unsigned int *columns_amount,
+                       unsigned int **columns_indexes) {
     unsigned int columns_count = request_columns_amount;
 
     uint16_t table_columns_amount = table->columns.amount;
@@ -36,14 +37,10 @@ static struct json_object *map_columns_to_indexes(unsigned int request_columns_a
         }
     } else {
         for (unsigned int i = 0; i < columns_count; ++i) {
-            fflush(stdout);
             bool found = false;
             for (unsigned int j = 0; j < table_columns_amount; j++) {
-                fflush(stdout);
-                fflush(stdout);
                 if (strcmp(request_columns_names[i], table->columns.columns[j].name) == 0) {
                     (*columns_indexes)[i] = j;
-                    fflush(stdout);
                     found = true;
                     break;
                 }
@@ -51,12 +48,9 @@ static struct json_object *map_columns_to_indexes(unsigned int request_columns_a
 
             if (!found) {
                 size_t msg_length = 41 + strlen(request_columns_names[i]);
-
                 char msg[msg_length];
                 snprintf(msg, msg_length, "column with name %s is not exists in table", request_columns_names[i]);
-
-                printf("%s\n", msg);
-                // return json_api_make_error(msg);
+                return get_failure_response(msg);
             }
         }
     }
@@ -65,13 +59,12 @@ static struct json_object *map_columns_to_indexes(unsigned int request_columns_a
     return NULL;
 }
 
-static struct json_object *
+static char *
 check_values(unsigned int request_values_amount, struct storage_value **request_values_values,
              struct storage_table *table, unsigned int columns_amount, const unsigned int *columns_indexes) {
 
     if (request_values_amount != columns_amount) {
-        printf("values amount is not equals to columns amount");
-        //return json_api_make_error("values amount is not equals to columns amount");
+        return get_failure_response("values amount is not equals to columns amount");
     }
 
     for (unsigned int i = 0; i < columns_amount; ++i) {
@@ -118,13 +111,13 @@ check_values(unsigned int request_values_amount, struct storage_value **request_
         char msg[msg_length];
         snprintf(msg, msg_length, "value for column with name %s (%s) has wrong type %s",
                  column.name, col_type, val_type);
-        //return json_api_make_error(msg);
+        return get_failure_response(msg);
     }
 
     return NULL;
 }
 
-void handle_create_table(WJElement command, struct storage *storage) {
+char *handle_create_table(WJElement command, struct storage *storage) {
     struct json_create_table_request request = json_to_create_table_request(command);
 
     struct storage_table *table = malloc(sizeof(*table));
@@ -148,64 +141,47 @@ void handle_create_table(WJElement command, struct storage *storage) {
 
     storage_table_delete(table);
 
-    /*if (error) {
-        return json_api_make_error("a table with the same name is already exists");
-    } else {
-        return json_api_make_success(json_object_new_object());
-    }*/
-
     if (error) {
-        printf("операция добавления прошла неуспешно\n");
+        return get_failure_response(TABLE_DOES_EXIST);
     } else {
-        printf("операция добавления прошла успешно\n");
+        return get_success_response_msg("the table was successfully created");
     }
 }
 
-void handle_drop_table(WJElement command, struct storage *storage) {
+char *handle_drop_table(WJElement command, struct storage *storage) {
     struct json_drop_table_request request = json_to_drop_table_request(command);
 
     struct storage_table *table = storage_find_table(storage, request.table_name);
 
     if (!table) {
-        //return json_api_make_error("table with the specified name is not exists");
-        printf("table with the specified name does not exists\n");
+        return get_failure_response(TABLE_DOES_NOT_EXIST);
     }
     storage_table_remove(table);
     storage_table_delete(table);
-    //return json_api_make_success(json_object_new_object());
-    printf("операция удаления прошла успешно\n");
+    return get_success_response_msg("the table was successfully dropped");
 }
 
 
-void handle_insert_row(WJElement command, struct storage *storage) {
+char *handle_insert_row(WJElement command, struct storage *storage) {
     struct json_insert_request request = json_to_insert_request(command);
 
     struct storage_table *table = storage_find_table(storage, request.table_name);
 
     if (!table) {
-        printf("table with the specified name is not exists");
-        // return json_api_make_error("table with the specified name is not exists");
+        return get_failure_response(TABLE_DOES_NOT_EXIST);
     }
 
     unsigned int columns_amount;
     unsigned int *columns_indexes;
 
-
-    struct json_object *error = map_columns_to_indexes(request.columns.amount, request.columns.columns,
-                                                       table, &columns_amount, &columns_indexes);
+    char *error = map_columns_to_indexes(request.columns.amount, request.columns.columns,
+                                         table, &columns_amount, &columns_indexes);
 
     if (error) {
         storage_table_delete(table);
-        printf("map_columns_to_indexes failed");
-        // return error;
-    } else {
-        printf("col amount = %d\n", columns_amount);
-        for (int i = 0; i < columns_amount; i++) {
-            // printf("%d ", columns_indexes[i]);
-        }
+        return get_failure_response(error);
+
     }
-
-
 
     /* {
          printf("here ");
@@ -221,18 +197,16 @@ void handle_insert_row(WJElement command, struct storage *storage) {
 
     struct storage_row *row = storage_table_add_row(table);
     for (unsigned int i = 0; i < columns_amount; ++i) {
-        printf("is going to set %d = %s\n", columns_indexes[i], request.values.values[i]);
         storage_row_set_value(row, columns_indexes[i], request.values.values[i]);
     }
 
     free(columns_indexes);
     storage_row_delete(row);
     storage_table_delete(table);
-    //return json_api_make_success(json_object_new_object());
-    printf("добавление строки прошло успешно\n");
+    return get_success_response_msg("the row was successfully inserted");
 }
 
-static struct json_object *is_where_correct(struct storage_table *table, struct json_where *where) {
+static char *is_where_correct(struct storage_table *table, struct json_where *where) {
     printf("in is where correct\n");
     fflush(stdout);
     uint16_t table_columns_amount = table->columns.amount;
@@ -242,16 +216,11 @@ static struct json_object *is_where_correct(struct storage_table *table, struct 
         case OPERATOR_GT:
         case OPERATOR_LE:
             if (where->value == NULL) {
-                //return json_api_make_error("NULL value is not comparable");
-                printf("NULL value is not comparable\n");
-                fflush(stdout);
+                return get_failure_response("NULL value is not comparable");
             }
 
             for (unsigned int i = 0; i < table_columns_amount; ++i) {
                 struct storage_column column = table->columns.columns[i];
-                printf("column is %s %u\n", column.name, column.type);
-                printf("value type is %u\n", where->value->type);
-                fflush(stdout);
 
                 if (strcmp(column.name, where->column) == 0) {
                     switch (column.type) {
@@ -284,18 +253,15 @@ static struct json_object *is_where_correct(struct storage_table *table, struct 
                     char msg[msg_length];
 
                     snprintf(msg, msg_length, "types %s and %s are not comparable", column_type, value_type);
-                    printf("%s\n", msg);
-                    //return json_api_make_error(msg);
+                    return get_failure_response(msg);
                 }
             }
 
             {
                 size_t msg_length = 41 + strlen(where->column);
-
                 char msg[msg_length];
-                snprintf(msg, msg_length, "column with name %s is not exists in table", where->column);
-                printf("%s\n", msg);
-                //return json_api_make_error(msg);
+                snprintf(msg, msg_length, "column with name %s does not exist in table", where->column);
+                return get_failure_response(msg);
             }
 
     }
@@ -546,45 +512,29 @@ static bool eval_where(struct storage_row *row, struct json_where *where) {
                     return compare_values(where->op, storage_row_get_value(row, (uint16_t) i), where->value);
                 }
             }
-
             errno = EINVAL;
             return false;
     }
 }
 
-void handle_delete_row(WJElement command, struct storage *storage) {
-
-    printf("i am here -1 \n");
-    fflush(stdout);
+char *handle_delete_row(WJElement command, struct storage *storage) {
     struct json_delete_request request = json_to_delete_request(command);
-
-    printf("i am here \n");
-    fflush(stdout);
-
     struct storage_table *table = storage_find_table(storage, request.table_name);
 
     if (!table) {
-        printf("table with the specified name is not exists\n");
-        //return json_api_make_error("table with the specified name is not exists");
+        return get_failure_response(TABLE_DOES_NOT_EXIST);
     }
 
-    // struct storage_joined_table * joined_table = storage_joined_table_wrap(table);
-
     if (request.where) {
-        struct json_object *error = is_where_correct(table, request.where);
+        char *error = is_where_correct(table, request.where);
 
         if (error) {
             storage_table_delete(table);
-            printf("where is not correct\n");
-            //return error;
-        } else {
-            printf("where %s %d\n", request.where->column, request.where->value->value);
+            return error;
         }
     }
 
-    printf("i am here 1 \n");
-
-    unsigned long long amount = 0;
+    int amount = 0;
     for (struct storage_row *row = storage_table_get_first_row(table); row; row = storage_row_next(row)) {
         if (request.where == NULL || eval_where(row, request.where)) {
             storage_row_remove(row);
@@ -593,113 +543,100 @@ void handle_delete_row(WJElement command, struct storage *storage) {
     }
 
     storage_table_delete(table);
-    //struct json_object * answer = json_object_new_object();
-    //json_object_object_add(answer, "amount", json_object_new_uint64(amount));
-    //return json_api_make_success(answer);
-
-    printf("%llu rows were deleted\n", amount);
+    return get_success_response(amount);
 }
 
-void handle_select(WJElement command, struct storage *storage) {
+char *handle_select(WJElement command, struct storage *storage) {
     struct json_select_request request = json_to_select_request(command);
 
     struct storage_table *table = storage_find_table(storage, request.table_name);
 
     WJElement answer = WJEObject(NULL, NULL, WJE_NEW);
-    WJEString(answer, "query-type", WJE_SET, "SELECT");
 
     if (!table) {
-        WJEString(answer, "status", WJE_SET, "failed");
-        WJEString(answer, "msg", WJE_SET, "table with the specified name is not exists");
-        //TODO return message
+        return get_failure_response(TABLE_DOES_NOT_EXIST);
     }
 
     unsigned int columns_amount;
     unsigned int *columns_indexes;
 
-    struct json_object *error = map_columns_to_indexes(request.columns.amount, request.columns.columns,
+    char *error = map_columns_to_indexes(request.columns.amount, request.columns.columns,
                                                        table, &columns_amount, &columns_indexes);
 
+
     if (request.where) {
-        struct json_object *error1 = is_where_correct(table, request.where);
+        char *error1 = is_where_correct(table, request.where);
         if (error) {
             storage_table_delete(table);
-            printf("where is not correct\n");
-            //return error1;
-        } else {
-            //printf("where %s %d\n", request.where->column, request.where->value->value);
+            return error;
+        }
+        if (error1) {
+            storage_table_delete(table);
+            return error1;
         }
     }
 
 
-    if(request.columns.amount == 0){
-        for (int i = 0; i < table->columns.amount; i++){
+    if (request.columns.amount == 0) {
+        for (int i = 0; i < table->columns.amount; i++) {
             WJEObject(answer, "columns[$]", WJE_NEW);
             WJEString(answer, "columns[-1]", WJE_SET, table->columns.columns[i].name);
         }
-    }else{
-        for (int i = 0; i < columns_amount; i++){
+    } else {
+        for (int i = 0; i < columns_amount; i++) {
             WJEObject(answer, "columns[$]", WJE_NEW);
             WJEString(answer, "columns[-1]", WJE_SET, request.columns.columns[i]);
         }
     }
 
-
-
     WJEObject(answer, "values[]", WJE_NEW);
-    unsigned long long amount = 0;
+    int amount = 0;
     for (struct storage_row *row = storage_table_get_first_row(table); row; row = storage_row_next(row)) {
-        //WJEObject(answer, "values[$]", WJE_NEW);
         WJEArray(answer, "values[$]", WJE_NEW);
         if (request.where == NULL || eval_where(row, request.where)) {
             for (int i = 0; i < columns_amount; i++) {
                 struct storage_value *value = storage_row_get_value(row, columns_indexes[i]);
 
+                if (value == NULL) {
+                    WJEString(answer, "values[-1][$]", WJE_SET, "NULL");
+                    continue;
+                }
+
                 switch (value->type) {
                     case STORAGE_COLUMN_TYPE_INT:
                         WJEInt64(answer, "values[-1][$]", WJE_SET, value->value._int);
-                        printf("%ld ", value->value._int);
                         break;
                     case STORAGE_COLUMN_TYPE_UINT:
                         WJEUInt64(answer, "values[-1][$]", WJE_SET, value->value.uint);
-                        printf("%ld ", value->value.uint);
                         break;
                     case STORAGE_COLUMN_TYPE_NUM:
                         WJEDouble(answer, "values[-1][$]", WJE_SET, value->value.num);
-                        printf("%f ", value->value.num);
                         break;
                     case STORAGE_COLUMN_TYPE_STR:
                         WJEString(answer, "values[-1][$]", WJE_SET, value->value.str);
-                        printf("%s ", value->value.str);
                         break;
                 }
             }
             amount++;
-            printf("\n");
         }
     }
 
-    WJEInt64(answer, "amount", WJE_SET, amount);
-    WJEString(answer, "status", WJE_SET, "success");
-    char * json = WJEToString(answer, TRUE);
-    printf("%s\n", json);
+    return get_success_response(amount);
 }
 
-void handle_update(WJElement command, struct storage *storage) {
+char *handle_update(WJElement command, struct storage *storage) {
     struct json_update_request request = json_to_update_request(command);
     struct storage_table *table = storage_find_table(storage, request.table_name);
 
     if (!table) {
-        //return json_api_make_error("table with the specified name is not exists");
-        printf("table with the specified name is not exists");
+        return get_failure_response(TABLE_DOES_NOT_EXIST);
     }
 
     if (request.where) {
-        struct json_object *error = is_where_correct(table, request.where);
+        char *error = is_where_correct(table, request.where);
         if (error) {
             storage_table_delete(table);
-            printf("where is not correct");
-            //return error;
+            return error;
         }
     }
 
@@ -707,12 +644,12 @@ void handle_update(WJElement command, struct storage *storage) {
     unsigned int *columns_indexes;
 
     {
-        struct json_object *error = map_columns_to_indexes(request.columns.amount, request.columns.columns,
+        char *error = map_columns_to_indexes(request.columns.amount, request.columns.columns,
                                                            table, &columns_amount, &columns_indexes);
 
         if (error) {
             storage_table_delete(table);
-            //return error;
+            return error;
         }
     }
 
@@ -727,11 +664,10 @@ void handle_update(WJElement command, struct storage *storage) {
          }
      }*/
 
-    unsigned long long amount = 0;
+    int amount = 0;
     for (struct storage_row *row = storage_table_get_first_row(table); row; row = storage_row_next(row)) {
         if (request.where == NULL || eval_where(row, request.where)) {
             for (unsigned int i = 0; i < columns_amount; ++i) {
-                printf("col #%d = %s\n", columns_indexes[i], request.values.values[i]->value);
                 storage_row_set_value(row, columns_indexes[i], request.values.values[i]);
             }
             ++amount;
@@ -740,31 +676,28 @@ void handle_update(WJElement command, struct storage *storage) {
 
     free(columns_indexes);
     storage_table_delete(table);
-    /*struct json_object * answer = json_object_new_object();
-    json_object_object_add(answer, "amount", json_object_new_uint64(amount));
-    return j%llun_api_make_success(answer);*/
-    printf("%d rows were updates\n", amount);
+    return get_success_response(amount);
 
 }
 
 
-void handle_request(WJElement command, struct storage *storage) {
+char *handle_request(WJElement command, struct storage *storage) {
     char *query_type = WJEStringF(command, WJE_GET, NULL, NULL, "query-type");
 
     if (strcmp(query_type, "CREATE") == 0) {
-        handle_create_table(command, storage);
+        return handle_create_table(command, storage);
     } else if (strcmp(query_type, "DROP") == 0) {
-        handle_drop_table(command, storage);
+        return handle_drop_table(command, storage);
     } else if (strcmp(query_type, "SELECT") == 0) {
-        handle_select(command, storage);
+        return handle_select(command, storage);
     } else if (strcmp(query_type, "UPDATE") == 0) {
-        handle_update(command, storage);
+        return handle_update(command, storage);
     } else if (strcmp(query_type, "INSERT") == 0) {
-        handle_insert_row(command, storage);
+        return handle_insert_row(command, storage);
     } else if (strcmp(query_type, "DELETE") == 0) {
-        printf("it is delete \n");
-        handle_delete_row(command, storage);
+        return handle_delete_row(command, storage);
     }
+    return "";
 }
 
 void readXBytes(int socket, unsigned int x, void *buffer) {
@@ -773,11 +706,9 @@ void readXBytes(int socket, unsigned int x, void *buffer) {
     while (bytesRead < x) {
         result = read(socket, buffer + bytesRead, x - bytesRead);
         if (result < 1) {
-            // Throw your error.
+            printf("error occurred while reading from socket\n");
         }
-
         bytesRead += result;
-        //printf("%d\n", bytesRead);
     }
 }
 
@@ -794,7 +725,6 @@ void receive_and_send(int sockfd, struct storage *storage) {
     handle_request(wjelement, storage);
 }
 
-// Driver function
 int server_linux() {
     int fd = open("db", O_RDWR);
     struct storage *storage;
@@ -851,13 +781,12 @@ int server_linux() {
     } else
         printf("server accept the client...\n");
 
+    bool quit = false;
     // Function for chatting between client and server
-    while (1) {
+    while (!quit) {
         receive_and_send(connfd, storage);
     }
 
-
-
     // After chatting close the socket
-    //close(sockfd);
+    close(sockfd);
 }
