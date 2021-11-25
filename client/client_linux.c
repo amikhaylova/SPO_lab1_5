@@ -79,6 +79,7 @@ int initialize_client() {
     //close(sockfd);
 }
 
+
 void handle_response(WJElement response) {
     char *response_status = WJEStringF(response, WJE_GET, NULL, NULL, "status");
     if (strcmp(response_status, "success") == 0) {
@@ -95,35 +96,46 @@ void handle_response(WJElement response) {
 
             char *columns[col_amount];
             int i = 0;
+            size_t longest_column_length = 0;
             while ((column_name = WJEStringF(col_array, WJE_GET, NULL, NULL, "[%d]", i))) {
                 columns[i] = column_name;
+                if (strlen(columns[i]) > longest_column_length)
+                    longest_column_length = strlen(columns[i]);
                 i++;
             }
 
-            for (int j = 0; j < col_amount; j++) {
-                printf(BOLDGREEN "%-20s" RESET, columns[j]);
-            }
-
-            printf(BOLDGREEN "\n" RESET);
-
-
             int64_t amount = WJEInt64F(response, WJE_GET, NULL, NULL, "amount");
+            char *rows_array[amount][col_amount];
+
             WJElement rows = WJEArray(response, "values", WJE_GET);
             WJElement row = NULL;
             int k = 0;
             while (row = WJEArrayF(rows, WJE_GET, NULL, "[%d]", k)) {
-                // printf("row = %s\n",WJEToString(row, TRUE));
                 char *value;
                 int m = 0;
-                // values[-1][$]
                 while (value = WJEStringF(response, WJE_GET, NULL, NULL, "values[%d][%d]", k, m)) {
-                    printf("%-20s", value);
+                    rows_array[k][m] = value;
+                    if (strlen(rows_array[k][m]) > longest_column_length)
+                        longest_column_length = strlen(rows_array[k][m]);
                     m++;
                 }
-                printf("\n");
                 k++;
             }
+
+            int length = longest_column_length + 5;
+
+            for (int j = 0; j < col_amount; j++) {
+                printf(BOLDGREEN "%-*s" RESET, (int) length, columns[j]);
+            }
+            printf("\n");
+            for (int i = 0; i < amount; i++) {
+                for (int j = 0; j < col_amount; j++) {
+                    printf("%-*s", (int) length, rows_array[i][j]);
+                }
+                printf("\n");
+            }
             printf(MAGENTA "%ld rows were selected\n" RESET, amount);
+
 
         } else if (strcmp(type, "DELETE") == 0) {
             int64_t amount = WJEInt64F(response, WJE_GET, NULL, NULL, "amount");
