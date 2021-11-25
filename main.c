@@ -50,14 +50,15 @@ int main(int argc, char **argv) {
             struct sql_node * node = malloc(sizeof(struct sql_node));
             int status = parse_string(command, node);
 
-            if (status != 1){
-                char * json_string = sql_node_to_json_string(node);
+            print_sql_tree(node, 0);
+
+            if (status != 1) {
+                char *json_string = sql_node_to_json_string(node);
                 WJElement response = NULL;
                 send_and_receive(json_string, &response);
                 char *response_status = WJEStringF(response, WJE_GET, NULL, NULL, "status");
                 handle_response(response);
-               // printf("status is %s\n", response_status);
-            }else{
+            } else {
                 printf("The syntax of command is invalid\n");
             }
         }

@@ -40,7 +40,7 @@ values                     return VALUES;
 VALUES                     return VALUES;
 [ \t\r\n]+		        /* ignore whitespace */;
 \*						return ALL;
-[a-zA-Z0-9]*	yylval.text=strdup(yytext);return IDENTIFIER;
+-?[a-zA-Z0-9]*[.]?[0-9]*	yylval.text=strdup(yytext);return IDENTIFIER;
 .                       return (int) yytext[0];
 %%
 
