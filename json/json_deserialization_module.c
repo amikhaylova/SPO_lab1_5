@@ -125,9 +125,6 @@ struct json_drop_table_request json_to_drop_table_request(WJElement command) {
 }
 
 struct json_select_request json_to_select_request(WJElement command) {
-    fflush(stdout);
-    printf("i am here2\n");
-    fflush(stdout);
     struct json_select_request request;
     request.columns.amount = 0;
     request.columns.columns = NULL;

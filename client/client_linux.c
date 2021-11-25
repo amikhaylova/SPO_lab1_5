@@ -13,6 +13,7 @@
 #define RESET "\033[0m"
 #define MAGENTA "\033[35m"
 #define RED     "\033[31m"
+
 int sockfd;
 
 int send_message_size(uint32_t size) {

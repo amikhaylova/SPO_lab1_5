@@ -6,6 +6,9 @@
 #include "client/client_linux.h"
 #include "server/server_linux.h"
 
+#define RESET "\033[0m"
+#define RED     "\033[31m"
+
 int main(int argc, char **argv) {
     if (strcmp("server", argv[1]) == 0) {
         if (argc != 3) {
@@ -39,7 +42,7 @@ int main(int argc, char **argv) {
                 send_and_receive(json_string, &response);
                 handle_response(response);
             } else {
-                printf("The syntax of command is invalid\n");
+                printf(RED "The syntax of command is invalid\n" RESET);
             }
         }
         return 1;

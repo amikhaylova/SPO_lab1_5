@@ -207,9 +207,6 @@ void storage_row_set_value(struct storage_row *row, uint16_t index, struct stora
     uint64_t pointer = 0;
 
     if (value) {
-        printf("value type is %d\n", value->type);
-        fflush(stdout);
-
         if (row->table->columns.columns[index].type != value->type) {
             errno = EINVAL;
             return;
@@ -217,24 +214,18 @@ void storage_row_set_value(struct storage_row *row, uint16_t index, struct stora
 
         switch (value->type) {
             case STORAGE_COLUMN_TYPE_INT:
-                printf("value = %ld\n",value->value._int );
                 pointer = storage_write(row->table->storage->fd, &value->value._int, sizeof(value->value._int));
                 break;
 
             case STORAGE_COLUMN_TYPE_UINT:
-                printf("i am in uint \n");
-                fflush(stdout);
-                printf("value = %ld\n",value->value.uint );
                 pointer = storage_write(row->table->storage->fd, &value->value.uint, sizeof(value->value.uint));
                 break;
 
             case STORAGE_COLUMN_TYPE_NUM:
-                printf("value = %f\n",value->value.num);
                 pointer = storage_write(row->table->storage->fd, &value->value.num, sizeof(value->value.num));
                 break;
 
             case STORAGE_COLUMN_TYPE_STR:
-                printf("value = %s\n",value->value.str );
                 pointer = storage_write_string(row->table->storage->fd, value->value.str);
                 break;
         }
