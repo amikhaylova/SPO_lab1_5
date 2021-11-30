@@ -154,3 +154,88 @@ void handle_response(WJElement response) {
     }
 
 }
+
+
+void handle_response_interface(WJElement response, char * output) {
+    char *response_status = WJEStringF(response, WJE_GET, NULL, NULL, "status");
+    if (strcmp(response_status, "success") == 0) {
+        char *type = WJEStringF(response, WJE_GET, NULL, NULL, "query-type");
+        if (strcmp(type, "SELECT") == 0) {
+
+            WJElement col_array = NULL;
+            col_array = WJEArrayF(response, WJE_GET, &col_array, "columns");
+            char *column_name = NULL;
+            int64_t col_amount = 0;
+            while ((column_name = WJEStringF(col_array, WJE_GET, NULL, NULL, "[%ld]", col_amount))) {
+                col_amount++;
+            }
+
+            char *columns[col_amount];
+            int i = 0;
+            size_t longest_column_length = 0;
+            while ((column_name = WJEStringF(col_array, WJE_GET, NULL, NULL, "[%d]", i))) {
+                columns[i] = column_name;
+                if (strlen(columns[i]) > longest_column_length)
+                    longest_column_length = strlen(columns[i]);
+                i++;
+            }
+
+            int64_t amount = WJEInt64F(response, WJE_GET, NULL, NULL, "amount");
+            char *rows_array[amount][col_amount];
+
+            WJElement rows = WJEArray(response, "values", WJE_GET);
+            WJElement row = NULL;
+            int k = 0;
+            while (row = WJEArrayF(rows, WJE_GET, NULL, "[%d]", k)) {
+                char *value;
+                int m = 0;
+                while (value = WJEStringF(response, WJE_GET, NULL, NULL, "values[%d][%d]", k, m)) {
+                    rows_array[k][m] = value;
+                    if (strlen(rows_array[k][m]) > longest_column_length)
+                        longest_column_length = strlen(rows_array[k][m]);
+                    m++;
+                }
+                k++;
+            }
+
+            int length = longest_column_length + 5;
+
+            for (int j = 0; j < col_amount; j++) {
+                output += sprintf(output, "%-*s", (int) length, columns[j]);
+                printf(BOLDGREEN "%-*s" RESET, (int) length, columns[j]);
+            }
+            output += sprintf(output, "\r\n");
+            printf("\n");
+            for (int i = 0; i < amount; i++) {
+                for (int j = 0; j < col_amount; j++) {
+                    output += sprintf(output, "%-*s", (int) length, rows_array[i][j]);
+                    printf("%-*s", (int) length, rows_array[i][j]);
+                }
+                output += sprintf(output, "\r\n");
+                printf("\n");
+            }
+            printf(MAGENTA "%ld rows were selected\n" RESET, amount);
+            output += sprintf(output, "%ld rows were selected\r\n", amount);
+        } else if (strcmp(type, "DELETE") == 0) {
+            int64_t amount = WJEInt64F(response, WJE_GET, NULL, NULL, "amount");
+            printf(MAGENTA"%ld rows were deleted\n"RESET, amount);
+            output += sprintf(output,"%ld rows were deleted\r\n", amount);
+        } else if (strcmp(type, "UPDATE") == 0) {
+            int64_t amount = WJEInt64F(response, WJE_GET, NULL, NULL, "amount");
+            output += sprintf(output, "%ld rows were updated\r\n", amount);
+            printf(MAGENTA"%ld rows were updated\n"RESET, amount);
+        } else if (strcmp(type, "DROP") == 0 || strcmp(type, "CREATE") == 0 || strcmp(type, "INSERT") == 0) {
+            char *msg = WJEStringF(response, WJE_GET, NULL, NULL, "msg");
+            output += sprintf(output, "%s\r\n", msg);
+            printf(MAGENTA"%s\n"RESET, msg);
+        }
+    } else if (strcmp(response_status, "failed") == 0) {
+        char *msg = WJEStringF(response, WJE_GET, NULL, NULL, "msg");
+        printf(RED"operation failed: %s\n"RESET, msg);
+        output += sprintf(output, "operation failed: %s\r\n", msg);
+    } else {
+        output += sprintf(output,"unexpected answer from server\r\n");
+        printf(RED"%s\n", "unexpected answer from server\n");
+    }
+
+}
