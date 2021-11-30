@@ -589,8 +589,8 @@ char *handle_select(WJElement command, struct storage *storage) {
     WJEObject(answer, "values[]", WJE_NEW);
     int amount = 0;
     for (struct storage_row *row = storage_table_get_first_row(table); row; row = storage_row_next(row)) {
-        WJEArray(answer, "values[$]", WJE_NEW);
         if (request.where == NULL || eval_where(row, request.where)) {
+            WJEArray(answer, "values[$]", WJE_NEW);
             for (int i = 0; i < columns_amount; i++) {
                 struct storage_value *value = storage_row_get_value(row, columns_indexes[i]);
 
@@ -742,6 +742,7 @@ void receive_and_send(int sockfd, struct storage *storage) {
     readXBytes(sockfd, size, buff);
     WJElement wjelement = WJEParse(buff);
     char * response = handle_request(wjelement, storage);
+    printf("%s\n", response);
     send_message(response, sockfd);
 }
 
